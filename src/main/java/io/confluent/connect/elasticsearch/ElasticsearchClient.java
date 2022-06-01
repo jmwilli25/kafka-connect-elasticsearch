@@ -52,6 +52,7 @@ import org.elasticsearch.action.bulk.BulkResponse;
 import org.elasticsearch.client.RequestOptions;
 import org.elasticsearch.client.RestClient;
 import org.elasticsearch.client.RestHighLevelClient;
+import org.elasticsearch.client.RestHighLevelClientBuilder;
 import org.elasticsearch.client.indices.CreateDataStreamRequest;
 import org.elasticsearch.client.indices.CreateIndexRequest;
 import org.elasticsearch.client.indices.GetIndexRequest;
@@ -130,17 +131,20 @@ public class ElasticsearchClient {
     this.clock = Time.SYSTEM;
 
     ConfigCallbackHandler configCallbackHandler = new ConfigCallbackHandler(config);
-    this.client = new RestHighLevelClient(
+    this.client = new RestHighLevelClientBuilder(
         RestClient
             .builder(
                 config.connectionUrls()
-                    .stream()
-                    .map(HttpHost::create)
-                    .collect(toList())
-                    .toArray(new HttpHost[config.connectionUrls().size()])
-            )
-            .setHttpClientConfigCallback(configCallbackHandler)
-    );
+                  .stream()
+                  .map(HttpHost::create)
+                  .collect(toList())
+                  .toArray(new HttpHost[config.connectionUrls().size()])
+        )
+        .setHttpClientConfigCallback(configCallbackHandler)
+        .build()
+    )
+    .setApiCompatibilityMode(true)
+    .build();
     this.bulkProcessor = BulkProcessor
         .builder(buildConsumer(), buildListener(afterBulkCallback))
         .setBulkActions(config.batchSize())
